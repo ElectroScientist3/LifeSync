@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import Routine from "./pages/Routine";
+import Fitness from "./pages/Fitness";
 
 function PrivateRoute() {
   const token = localStorage.getItem("token");
@@ -17,7 +19,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/signup" />} />
         <Route path="/login" element={
           <PublicRoute>
             <Login />
@@ -29,7 +31,11 @@ function App() {
           </PublicRoute>
         } />
         <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route path="routine" element={<Routine />} />
+            <Route path="fitness" element={<Fitness />} />
+            <Route index element={<Navigate to="routine" />} />
+          </Route>
         </Route>
       </Routes>
     </Router>
