@@ -4,6 +4,8 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Routine from "./pages/Routine";
 import Fitness from "./pages/Fitness";
+import DashboardHome from "./pages/DashboardHome";
+import Profile from "./pages/Profile";
 
 function PrivateRoute() {
   const token = localStorage.getItem("token");
@@ -32,9 +34,10 @@ function App() {
         } />
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<DashboardHome />} />
             <Route path="routine" element={<Routine />} />
             <Route path="fitness" element={<Fitness />} />
-            <Route index element={<Navigate to="routine" />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
         </Route>
       </Routes>

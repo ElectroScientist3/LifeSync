@@ -2,31 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 
 function Dashboard() {
-  const [message, setMessage] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef();
-
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setMessage(data.msg);
-      } else {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    };
-
-    fetchDashboard();
-  }, [navigate]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -45,8 +25,10 @@ function Dashboard() {
   };
 
   // Highlight active sidebar item based on route
+  const isDashboard = location.pathname === "/dashboard";
   const isRoutine = location.pathname.endsWith("/routine");
   const isFitness = location.pathname.endsWith("/fitness");
+  const isProfile = location.pathname.endsWith("/profile"); // <-- Add this
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -60,6 +42,17 @@ function Dashboard() {
         style={{ minWidth: sidebarOpen ? "12rem" : "4rem" }}
       >
         <button
+          className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-gray-100 rounded-r-full mb-2 transition-colors ${
+            isDashboard ? "bg-gray-300 text-gray-900" : ""
+          }`}
+          onClick={() => navigate("/dashboard")}
+        >
+          <span role="img" aria-label="dashboard">
+            🏠
+          </span>
+          {sidebarOpen && "Dashboard"}
+        </button>
+        <button
           className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-blue-100 rounded-r-full mb-2 transition-colors ${
             isRoutine ? "bg-blue-200 text-blue-700" : ""
           }`}
@@ -71,7 +64,7 @@ function Dashboard() {
           {sidebarOpen && "Routine"}
         </button>
         <button
-          className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-green-100 rounded-r-full transition-colors ${
+          className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-green-100 rounded-r-full mb-2 transition-colors ${
             isFitness ? "bg-green-200 text-green-700" : ""
           }`}
           onClick={() => navigate("/dashboard/fitness")}
@@ -81,10 +74,21 @@ function Dashboard() {
           </span>
           {sidebarOpen && "Fitness"}
         </button>
+        <button
+          className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-purple-100 rounded-r-full transition-colors ${
+            isProfile ? "bg-purple-200 text-purple-700" : ""
+          }`}
+          onClick={() => navigate("/dashboard/profile")}
+        >
+          <span role="img" aria-label="profile">
+            👤
+          </span>
+          {sidebarOpen && "Profile"}
+        </button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col">
         {/* Top Bar */}
         <div className="flex justify-end items-center p-6">
           <div className="relative" ref={dropdownRef}>
@@ -111,11 +115,8 @@ function Dashboard() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-white p-8 rounded shadow-md w-96 text-center">
-            <p className="mb-4">{message}</p>
-            <Outlet />
-          </div>
+        <div className="flex-1 flex flex-col">
+          <Outlet />
         </div>
       </div>
     </div>
