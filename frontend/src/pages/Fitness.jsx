@@ -75,6 +75,7 @@ function Fitness() {
 	const [bodyFat, setBodyFat] = useState(""); // %
 	const [bmrFormula, setBmrFormula] = useState(BMR_FORMULAS[0].name);
 	const [activity, setActivity] = useState(ACTIVITY_LEVELS[0].value);
+	const [fitnessGoal, setFitnessGoal] = useState("maintain");
 
 	// Fitness plans state
 	const [fitnessPlans, setFitnessPlans] = useState({
@@ -423,6 +424,60 @@ function Fitness() {
 				{/* Workout Routine */}
 				<div className="flex-1 bg-white rounded-lg shadow p-8 mb-8 lg:mb-0">
 					<h2 className="text-2xl font-bold mb-4 text-green-700 text-center">7 Days Fitness Workout Routine</h2>
+
+					{/* Fitness Goal Selector - NEW SECTION ADDED HERE */}
+					<div className="mb-6">
+						<label className="block font-semibold mb-2 text-green-700 text-center text-lg">
+							Current Fitness Goal
+						</label>
+						<div className="flex flex-wrap justify-center gap-3">
+							<button
+								type="button"
+								className={`px-4 py-2 rounded-full font-semibold border transition ${
+									fitnessGoal === "lose"
+										? "bg-green-600 text-white border-green-700 shadow"
+										: "bg-white text-green-700 border-green-300 hover:bg-green-50"
+								}`}
+								onClick={() => setFitnessGoal("lose")}
+							>
+								Weight Lose
+							</button>
+							<button
+								type="button"
+								className={`px-4 py-2 rounded-full font-semibold border transition ${
+									fitnessGoal === "gain"
+										? "bg-green-600 text-white border-green-700 shadow"
+										: "bg-white text-green-700 border-green-300 hover:bg-green-50"
+								}`}
+								onClick={() => setFitnessGoal("gain")}
+							>
+								Weight Gain
+							</button>
+							<button
+								type="button"
+								className={`px-4 py-2 rounded-full font-semibold border transition ${
+									fitnessGoal === "muscle"
+										? "bg-green-600 text-white border-green-700 shadow"
+										: "bg-white text-green-700 border-green-300 hover:bg-green-50"
+								}`}
+								onClick={() => setFitnessGoal("muscle")}
+							>
+								Muscle Building
+							</button>
+							<button
+								type="button"
+								className={`px-4 py-2 rounded-full font-semibold border transition ${
+									fitnessGoal === "maintain"
+										? "bg-green-600 text-white border-green-700 shadow"
+										: "bg-white text-green-700 border-green-300 hover:bg-green-50"
+								}`}
+								onClick={() => setFitnessGoal("maintain")}
+							>
+								Maintain Current Body State
+							</button>
+						</div>
+					</div>
+
 					{/* Day Selector */}
 					<div className="flex flex-wrap gap-2 justify-center mb-4">
 						{daysOfWeek.map((day) => (

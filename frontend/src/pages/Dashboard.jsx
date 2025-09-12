@@ -29,6 +29,7 @@ function Dashboard() {
   const isRoutine = location.pathname.endsWith("/routine");
   const isFitness = location.pathname.endsWith("/fitness");
   const isProfile = location.pathname.endsWith("/profile"); // <-- Add this
+  const isAssistant = location.pathname.endsWith("/assistant"); // Add this
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -84,6 +85,17 @@ function Dashboard() {
             👤
           </span>
           {sidebarOpen && "Profile"}
+        </button>
+        <button
+          className={`flex items-center gap-2 px-4 py-3 text-left text-lg font-semibold hover:bg-yellow-100 rounded-r-full transition-colors ${
+            isAssistant ? "bg-yellow-200 text-yellow-700" : ""
+          }`}
+          onClick={() => navigate("/dashboard/assistant")}
+        >
+          <span role="img" aria-label="assistant">
+            🤖
+          </span>
+          {sidebarOpen && "Lifesync Assistant"}
         </button>
       </div>
 

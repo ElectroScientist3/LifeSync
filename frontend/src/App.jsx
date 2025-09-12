@@ -6,6 +6,7 @@ import Routine from "./pages/Routine";
 import Fitness from "./pages/Fitness";
 import DashboardHome from "./pages/DashboardHome";
 import Profile from "./pages/Profile";
+import LifesyncAssistant from "./pages/LifesyncAssistant";
 
 function PrivateRoute() {
   const token = localStorage.getItem("token");
@@ -38,6 +39,7 @@ function App() {
             <Route path="routine" element={<Routine />} />
             <Route path="fitness" element={<Fitness />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="assistant" element={<LifesyncAssistant />} />
           </Route>
         </Route>
       </Routes>
