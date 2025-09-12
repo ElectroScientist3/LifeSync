@@ -48,6 +48,11 @@ function Routine() {
   // Track completed tasks for today (use unique key: day-time-title)
   const [completed, setCompleted] = useState({});
 
+  // Todos state
+  const [todos, setTodos] = useState([]);
+  const [todoForm, setTodoForm] = useState({ text: "", desc: "" });
+  const [editTodoIdx, setEditTodoIdx] = useState(null);
+
   // Add new reminder
   const handleReminderSubmit = (e) => {
     e.preventDefault();
@@ -143,6 +148,35 @@ function Routine() {
   const sortedPlans = weeklyPlans[selectedDay]
     .slice()
     .sort((a, b) => a.time.localeCompare(b.time));
+
+  // Add todo
+  const handleAddTodo = (e) => {
+    e.preventDefault();
+    if (!todoForm.text.trim()) return;
+    setTodos([...todos, { ...todoForm }]);
+    setTodoForm({ text: "", desc: "" });
+    setEditTodoIdx(null);
+  };
+
+  // Edit todo
+  const handleEditTodo = (idx) => {
+    setTodoForm(todos[idx]);
+    setEditTodoIdx(idx);
+  };
+
+  // Save edited todo
+  const handleSaveEditTodo = (e) => {
+    e.preventDefault();
+    setTodos(todos.map((t, idx) => (idx === editTodoIdx ? todoForm : t)));
+    setTodoForm({ text: "", desc: "" });
+    setEditTodoIdx(null);
+  };
+
+  // Delete todo
+  const handleDeleteTodo = (idx) => {
+    setTodos(todos.filter((_, i) => i !== idx));
+    setEditTodoIdx(null);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -634,6 +668,86 @@ function Routine() {
           </div>
         </div>
       )}
+
+      {/* To-Do List */}
+      <div className="bg-white rounded-lg shadow p-6 mt-8">
+        <h4 className="font-semibold mb-4 text-lg text-indigo-700">To-Do List</h4>
+        <form
+          onSubmit={editTodoIdx !== null ? handleSaveEditTodo : handleAddTodo}
+          className="flex flex-col md:flex-row gap-2 items-end mb-4"
+        >
+          <input
+            type="text"
+            placeholder="To-Do"
+            className="p-2 border rounded flex-1"
+            value={todoForm.text}
+            onChange={e => setTodoForm(f => ({ ...f, text: e.target.value }))}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Description (optional)"
+            className="p-2 border rounded flex-1"
+            value={todoForm.desc}
+            onChange={e => setTodoForm(f => ({ ...f, desc: e.target.value }))}
+          />
+          <button
+            type="submit"
+            className="bg-indigo-500 text-white px-4 py-2 rounded"
+          >
+            {editTodoIdx !== null ? "Save" : "Add"}
+          </button>
+          {editTodoIdx !== null && (
+            <button
+              type="button"
+              className="bg-gray-300 px-4 py-2 rounded"
+              onClick={() => {
+                setTodoForm({ text: "", desc: "" });
+                setEditTodoIdx(null);
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </form>
+        <div className="bg-gray-50 rounded p-4 min-h-[80px]">
+          {todos.length === 0 ? (
+            <p className="text-gray-400 text-center">No to-dos yet.</p>
+          ) : (
+            <ul>
+              {todos.map((todo, idx) => (
+                <li
+                  key={idx}
+                  className="flex justify-between items-center border-b py-2"
+                >
+                  <div>
+                    <span className="font-semibold">{todo.text}</span>
+                    {todo.desc && (
+                      <span className="text-gray-600 text-sm ml-2">
+                        ({todo.desc})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-blue-600 hover:underline text-sm"
+                      onClick={() => handleEditTodo(idx)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="text-red-600 hover:underline text-sm"
+                      onClick={() => handleDeleteTodo(idx)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

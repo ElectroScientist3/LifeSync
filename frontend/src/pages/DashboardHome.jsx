@@ -29,6 +29,11 @@ function DashboardHome() {
   const [reminders] = useState([
     // Example: { title: "Doctor", date: "2025-09-20" }
   ]);
+  // Demo todos (replace with real state/context for actual app)
+  const [todos] = useState([
+    // "Buy groceries",
+    // "Read a book"
+  ]);
   // -------------------------------------------------------------------------------
 
   // Calculate today's completion percent
@@ -137,6 +142,22 @@ function DashboardHome() {
               <li key={idx} className="mb-2 flex items-center gap-4">
                 <span className="font-semibold">{r.title}</span>
                 <span className="text-gray-600">{r.date}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* To-Do List */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4 text-indigo-700">To-Do List</h2>
+        {todos.length === 0 ? (
+          <p className="text-gray-400">No to-dos yet.</p>
+        ) : (
+          <ul>
+            {todos.map((todo, idx) => (
+              <li key={idx} className="py-2 border-b last:border-b-0">
+                {todo}
               </li>
             ))}
           </ul>
