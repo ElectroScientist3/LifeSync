@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Helper to get today's date in YYYY-MM-DD format
 const getToday = () => new Date().toISOString().split("T")[0];
@@ -53,36 +53,65 @@ function Routine() {
   const [todoForm, setTodoForm] = useState({ text: "", desc: "" });
   const [editTodoIdx, setEditTodoIdx] = useState(null);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/user/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setTodos(data.todos || []);
+      setWeeklyPlans(
+        data.weeklyPlans || {
+          Sunday: [],
+          Monday: [],
+          Tuesday: [],
+          Wednesday: [],
+          Thursday: [],
+          Friday: [],
+          Saturday: [],
+        }
+      );
+      setReminders(data.reminders || []);
+      // Add other fields if needed
+    };
+    fetchProfile();
+  }, []);
+
   // Add new reminder
-  const handleReminderSubmit = (e) => {
+  const handleReminderSubmit = async (e) => {
     e.preventDefault();
-    setReminders([...reminders, { ...reminderForm }]);
+    const newReminders = [...reminders, { ...reminderForm }];
+    setReminders(newReminders);
     setReminderForm({ title: "", time: "", description: "", date: getToday() });
+    await saveReminders(newReminders);
   };
 
   // Edit reminder
-  const handleEditReminder = (e) => {
+  const handleEditReminder = async (e) => {
     e.preventDefault();
-    setReminders(
-      reminders.map((r, idx) =>
-        idx === editReminder.idx ? editReminder.data : r
-      )
+    const newReminders = reminders.map((r, idx) =>
+      idx === editReminder.idx ? editReminder.data : r
     );
+    setReminders(newReminders);
     setEditReminder(null);
     setSelectedReminder(null);
+    await saveReminders(newReminders);
   };
 
   // Delete reminder
-  const handleDeleteReminder = (idx) => {
-    setReminders(reminders.filter((_, i) => i !== idx));
+  const handleDeleteReminder = async (idx) => {
+    const newReminders = reminders.filter((_, i) => i !== idx);
+    setReminders(newReminders);
     setSelectedReminder(null);
     setEditReminder(null);
+    await saveReminders(newReminders);
   };
 
   // Add new weekly plan
-  const handleWeeklySubmit = (e) => {
+  const handleWeeklySubmit = async (e) => {
     e.preventDefault();
-    setWeeklyPlans({
+    const updatedPlans = {
       ...weeklyPlans,
       [weeklyForm.day]: [
         ...weeklyPlans[weeklyForm.day],
@@ -92,12 +121,26 @@ function Routine() {
           description: weeklyForm.description,
         },
       ],
-    });
+    };
+    setWeeklyPlans(updatedPlans);
     setWeeklyForm({
       day: daysOfWeek[getCurrentDayIndex()],
       title: "",
       time: "",
       description: "",
+    });
+    await saveWeeklyPlans(updatedPlans);
+  };
+
+  const saveWeeklyPlans = async (newPlans) => {
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ weeklyPlans: newPlans }),
     });
   };
 
@@ -150,12 +193,24 @@ function Routine() {
     .sort((a, b) => a.time.localeCompare(b.time));
 
   // Add todo
-  const handleAddTodo = (e) => {
+  const handleAddTodo = async (e) => {
     e.preventDefault();
     if (!todoForm.text.trim()) return;
-    setTodos([...todos, { ...todoForm }]);
+    const newTodos = [...todos, { ...todoForm }];
+    setTodos(newTodos);
     setTodoForm({ text: "", desc: "" });
     setEditTodoIdx(null);
+
+    // Send to backend
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ todos: newTodos }),
+    });
   };
 
   // Edit todo
@@ -176,6 +231,18 @@ function Routine() {
   const handleDeleteTodo = (idx) => {
     setTodos(todos.filter((_, i) => i !== idx));
     setEditTodoIdx(null);
+  };
+
+  const saveReminders = async (newReminders) => {
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reminders: newReminders }),
+    });
   };
 
   return (

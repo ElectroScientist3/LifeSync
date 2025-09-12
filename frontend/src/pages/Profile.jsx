@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function Profile() {
   // Demo state; in a real app, fetch this from backend or context
@@ -10,6 +10,31 @@ function Profile() {
     age: 25,
     email: "john@example.com",
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/user/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setProfile(data);
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(profile),
+    });
+    // Optionally refetch profile
+  };
 
   return (
     <div className="max-w-lg mx-auto bg-white rounded-lg shadow p-8 mt-8">
