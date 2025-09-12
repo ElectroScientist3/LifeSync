@@ -56,13 +56,27 @@ function Routine() {
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/user/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setTodos(data.todos || []);
-      setWeeklyPlans(
-        data.weeklyPlans || {
+      try {
+        const res = await fetch("http://localhost:5000/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        const data = await res.json();
+
+        setTodos(data.todos || []);
+        setReminders(data.reminders || []);
+        setCompleted(data.completed || {});
+
+        // Normalize weeklyPlans
+        const rawPlans = data.weeklyPlans || {};
+        const normalizedPlans = {};
+        daysOfWeek.forEach(day => {
+          normalizedPlans[day] = Array.isArray(rawPlans[day]) ? rawPlans[day] : [];
+        });
+        setWeeklyPlans(normalizedPlans);
+      } catch (err) {
+        // Optionally show error to user
+        setWeeklyPlans({
           Sunday: [],
           Monday: [],
           Tuesday: [],
@@ -70,10 +84,13 @@ function Routine() {
           Thursday: [],
           Friday: [],
           Saturday: [],
-        }
-      );
-      setReminders(data.reminders || []);
-      // Add other fields if needed
+        });
+        setTodos([]);
+        setReminders([]);
+        setCompleted({});
+        // You can add a state for error and display it in your UI if you want
+        // setError(err.message);
+      }
     };
     fetchProfile();
   }, []);
@@ -145,11 +162,13 @@ function Routine() {
   };
 
   // Delete weekly plan
-  const handleDeletePlan = (day, idx) => {
-    setWeeklyPlans({
+  const handleDeletePlan = async (day, idx) => {
+    const updatedPlans = {
       ...weeklyPlans,
       [day]: weeklyPlans[day].filter((_, i) => i !== idx),
-    });
+    };
+    setWeeklyPlans(updatedPlans);
+    await saveWeeklyPlans(updatedPlans);
   };
 
   // Filter reminders for today, sorted by time
@@ -167,12 +186,14 @@ function Routine() {
     );
 
   // Handle task completion (use unique key)
-  const handleTaskToggle = (plan) => {
+  const handleTaskToggle = async (plan) => {
     const key = `${selectedDay}-${plan.time}-${plan.title}`;
-    setCompleted((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    const updatedCompleted = {
+      ...completed,
+      [key]: !completed[key],
+    };
+    setCompleted(updatedCompleted);
+    await saveCompleted(updatedCompleted);
   };
 
   // Calculate today's completion percent
@@ -220,17 +241,41 @@ function Routine() {
   };
 
   // Save edited todo
-  const handleSaveEditTodo = (e) => {
+  const handleSaveEditTodo = async (e) => {
     e.preventDefault();
-    setTodos(todos.map((t, idx) => (idx === editTodoIdx ? todoForm : t)));
+    const updatedTodos = todos.map((t, idx) => (idx === editTodoIdx ? todoForm : t));
+    setTodos(updatedTodos);
     setTodoForm({ text: "", desc: "" });
     setEditTodoIdx(null);
+
+    // Sync to backend
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ todos: updatedTodos }),
+    });
   };
 
   // Delete todo
-  const handleDeleteTodo = (idx) => {
-    setTodos(todos.filter((_, i) => i !== idx));
+  const handleDeleteTodo = async (idx) => {
+    const updatedTodos = todos.filter((_, i) => i !== idx);
+    setTodos(updatedTodos);
     setEditTodoIdx(null);
+
+    // Sync to backend
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ todos: updatedTodos }),
+    });
   };
 
   const saveReminders = async (newReminders) => {
@@ -242,6 +287,18 @@ function Routine() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ reminders: newReminders }),
+    });
+  };
+
+  const saveCompleted = async (newCompleted) => {
+    const token = localStorage.getItem("token");
+    await fetch("http://localhost:5000/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ completed: newCompleted }),
     });
   };
 
@@ -417,6 +474,7 @@ function Routine() {
                 {/* Find the max number of plans in any day */}
                 {Array.from({
                   length: Math.max(
+                    0, // <-- fallback so always at least 0
                     ...daysOfWeek.map((d) => weeklyPlans[d].length)
                   ),
                 }).map((_, rowIdx) => (

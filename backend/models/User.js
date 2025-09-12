@@ -12,7 +12,7 @@ const WeeklyPlanSchema = new mongoose.Schema({
   title: String,
   time: String,
   description: String,
-});
+}, { _id: true });
 
 const TodoSchema = new mongoose.Schema({
   text: String,
@@ -41,7 +41,18 @@ const UserSchema = new mongoose.Schema({
   gender: String,
 
   // Routine
-  weeklyPlans: { type: Map, of: [WeeklyPlanSchema], default: {} },
+  weeklyPlans: {
+    type: Object, // <-- Use plain object, not Map
+    default: {
+      Sunday: [],
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Saturday: [],
+    }
+  },
   reminders: [ReminderSchema],
   todos: [TodoSchema],
 
@@ -54,6 +65,8 @@ const UserSchema = new mongoose.Schema({
 
   // Meals
   mealPlans: { type: Map, of: [MealSlotSchema], default: {} },
+
+  completed: { type: Map, of: Boolean, default: {} },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
