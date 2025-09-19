@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // BMR formulas
 const BMR_FORMULAS = [
@@ -101,6 +101,9 @@ function Fitness() {
 	const [selectedMealDay, setSelectedMealDay] = useState(daysOfWeek[0]);
 	const [mealForm, setMealForm] = useState({ desc: "", calories: "" });
 	const [editMealIdx, setEditMealIdx] = useState(null);
+
+	// Loaded state
+	const [loaded, setLoaded] = useState(false);
 
 	// Handle unit switch and convert values
 	const handleUnitChange = (e) => {
@@ -245,6 +248,66 @@ function Fitness() {
 	// Calculate total calories for the day
 	const totalMealCalories = mealPlans[selectedMealDay]
 		.reduce((sum, meal) => sum + (parseInt(meal.calories) || 0), 0);
+
+	// Fetch fitness data from backend on mount
+	useEffect(() => {
+		const fetchFitness = async () => {
+			const token = localStorage.getItem("token");
+			const res = await fetch("http://localhost:5000/api/user/profile", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			if (!res.ok) return; // Optionally handle error
+			const data = await res.json();
+
+			// Set state from backend
+			setGender(data.gender || "male");
+			setWeight(data.weight || "");
+			setHeight(data.height || "");
+			setAge(data.age || "");
+			setFitnessGoal(data.fitnessGoal || "maintain");
+			setFitnessPlans(mapToObj(data.fitnessPlans, "fitness"));
+			setMealPlans(mapToObj(data.mealPlans, "meal"));
+			setActivity(data.activity || ACTIVITY_LEVELS[0].value);
+			// Optionally set bmi, bmr, dailyCalories if you want to show backend-calculated values
+			setLoaded(true); // Set loaded after data is set
+		};
+		fetchFitness();
+	}, []);
+	
+	// Helper to save fitness info to backend
+	const saveFitnessInfo = async (updates) => {
+		const token = localStorage.getItem("token");
+		await fetch("http://localhost:5000/api/user/profile", {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(updates),
+		});
+	};
+
+	// Call saveFitnessInfo when fitness info changes (weight, height, age, gender, goal)
+	useEffect(() => {
+		if (!loaded) return;
+		saveFitnessInfo({
+			gender, weight, height, age, fitnessGoal,
+			bmi, bmr, dailyCalories,
+			activity,
+		});
+	}, [gender, weight, height, age, fitnessGoal, bmi, bmr, dailyCalories, activity, loaded]);
+
+	// Update backend when fitnessPlans changes
+	useEffect(() => {
+		if (!loaded) return;
+		saveFitnessInfo({ fitnessPlans });
+	}, [fitnessPlans, loaded]);
+
+	// Update backend when mealPlans changes
+	useEffect(() => {
+		if (!loaded) return;
+		saveFitnessInfo({ mealPlans });
+	}, [mealPlans, loaded]);
 
 	return (
 		<div className="flex flex-col md:flex-row gap-8 p-8 min-h-screen bg-gray-50">
@@ -797,6 +860,32 @@ function Fitness() {
 			</div>
 		</div>
 	);
+}
+
+function mapToObj(obj, type = "fitness") {
+    const daysOfWeek = [
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+    ];
+    const MEAL_SLOTS = [
+        "Breakfast",
+        "Morning Snacks",
+        "Lunch",
+        "Afternoon Snacks",
+        "Dinner"
+    ];
+    const result = {};
+    daysOfWeek.forEach(day => {
+        if (obj && obj[day] && Array.isArray(obj[day])) {
+            result[day] = obj[day];
+        } else {
+            if (type === "fitness") {
+                result[day] = [];
+            } else {
+                result[day] = MEAL_SLOTS.map(() => ({ desc: "", calories: "" }));
+            }
+        }
+    });
+    return result;
 }
 
 export default Fitness;

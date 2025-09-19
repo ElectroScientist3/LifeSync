@@ -67,6 +67,7 @@ const UserSchema = new mongoose.Schema({
   mealPlans: { type: Map, of: [MealSlotSchema], default: {} },
 
   completed: { type: Map, of: Boolean, default: {} },
+  activity: { type: Number, default: 1.2 }, // Add this line
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
