@@ -10,12 +10,20 @@ const daysOfWeek = [
   "Saturday",
 ];
 
+const DEFAULT_MEAL_ARRAY = [
+  { desc: "", calories: "" },
+  { desc: "", calories: "" },
+  { desc: "", calories: "" },
+  { desc: "", calories: "" },
+  { desc: "", calories: "" },
+];
+
 // Helper to convert Map to plain object (replace the old one)
 function mapToObj(map, days, emptyValue) {
   const obj = {};
   days.forEach(day => {
     let val;
-    if (map && typeof map.get === "function") {
+    if (map instanceof Map) {
       val = map.get(day);
     } else if (map && typeof map === "object") {
       val = map[day];
@@ -58,21 +66,9 @@ exports.getProfile = async (req, res) => {
 
     // Normalize mealPlans (Map -> Object with arrays)
     userObj.mealPlans = ensureDays(
-      mapToObj(user.mealPlans, daysOfWeek, [
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-      ]),
+      mapToObj(user.mealPlans, daysOfWeek, DEFAULT_MEAL_ARRAY),
       daysOfWeek,
-      [
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-      ]
+      DEFAULT_MEAL_ARRAY
     );
 
     res.json(userObj);
@@ -95,14 +91,25 @@ function objToMap(obj) {
 // Update user profile (protected)
 exports.updateProfile = async (req, res) => {
   try {
-    const updates = { ...req.body };
+    // Only allow these fields to be updated
+    const allowedFields = [
+      "weight", "height", "age", "gender", "bmi", "bmr", "dailyCalories",
+      "fitnessGoal", "fitnessPlans", "mealPlans", "activity", "weeklyPlans",
+      "reminders", "todos", "completed"
+    ];
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
 
-    // Convert fitnessPlans and mealPlans to Map if present
-    if (updates.fitnessPlans) {
-        updates.fitnessPlans = objToMap(updates.fitnessPlans);
-    }
-    if (updates.mealPlans) {
-        updates.mealPlans = objToMap(updates.mealPlans);
+    // Validate types for plans
+    if (updates.fitnessPlans) updates.fitnessPlans = objToMap(updates.fitnessPlans);
+    if (updates.mealPlans) updates.mealPlans = objToMap(updates.mealPlans);
+    // If you allow weeklyPlans, validate it's an object with arrays
+    if (updates.weeklyPlans) {
+      daysOfWeek.forEach(day => {
+        if (!Array.isArray(updates.weeklyPlans[day])) updates.weeklyPlans[day] = [];
+      });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -110,6 +117,8 @@ exports.updateProfile = async (req, res) => {
       updates,
       { new: true }
     ).select('-password');
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
 
     // Normalize before sending back
     const userObj = user.toObject();
@@ -119,25 +128,14 @@ exports.updateProfile = async (req, res) => {
       []
     );
     userObj.mealPlans = ensureDays(
-      mapToObj(user.mealPlans, daysOfWeek, [
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-      ]),
+      mapToObj(user.mealPlans, daysOfWeek, DEFAULT_MEAL_ARRAY),
       daysOfWeek,
-      [
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-        { desc: "", calories: "" },
-      ]
+      DEFAULT_MEAL_ARRAY
     );
 
     res.json(userObj);
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    console.error(err); // Log internal error
+    res.status(500).json({ msg: "Server error" }); // Do not leak details
   }
 };
