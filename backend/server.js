@@ -10,7 +10,10 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected!'))
+  .then(() => {
+    console.log('MongoDB connected!');
+    require('./cron/reminderJob'); // <-- Add this line
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // allow requests from your React frontend

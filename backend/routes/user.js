@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
+router.post('/test-notification', auth, userController.sendTestNotification);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { sendFitnessReminder } = require('../services/notificationService');
 
 const daysOfWeek = [
   "Sunday",
@@ -137,5 +138,18 @@ exports.updateProfile = async (req, res) => {
   } catch (err) {
     console.error(err); // Log internal error
     res.status(500).json({ msg: "Server error" }); // Do not leak details
+  }
+};
+
+exports.sendTestNotification = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    await sendFitnessReminder(user.email, "This is a test notification from Lifesync+!");
+    res.json({ msg: "Test notification sent" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Failed to send test notification" });
   }
 };

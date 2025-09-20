@@ -68,6 +68,7 @@ const UserSchema = new mongoose.Schema({
 
   completed: { type: Map, of: Boolean, default: {} },
   activity: { type: Number, default: 1.2 }, // Add this line
+  _reminderSentToday: { type: Object, default: {} },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
